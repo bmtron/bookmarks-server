@@ -48,7 +48,7 @@ describe('Bookmarks Service object', () => {
             })
             it('getAllBookmarks() returns a status of 200 and all bookmarks', () => {
                 return supertest(app)
-                .get('/bookmarks')
+                .get('/api/bookmarks')
                 .expect(200, testBookmark)
             })
         })
@@ -67,7 +67,7 @@ describe('Bookmarks Service object', () => {
             })
             it(`sanitizes the bookmark`, () => {
                 return supertest(app)
-                .get('/bookmarks')
+                .get('/api/bookmarks')
                 .expect(200)
                 .expect(res => {
                     let badBookmark = res.body.find(item => item.id === maliciousBookmark.id)
@@ -89,7 +89,7 @@ describe('Bookmarks Service object', () => {
                 const bookmarkId = 3
                 const expectedBookmark = testBookmark[bookmarkId - 1]
                 return supertest(app)
-                .get(`/bookmarks/${bookmarkId}`)
+                .get(`/api/bookmarks/${bookmarkId}`)
                 .expect(200, expectedBookmark)
             })
         })
@@ -109,7 +109,7 @@ describe('Bookmarks Service object', () => {
             it(`sanitizes the bookmark`, () => {
                 const bookmarkId = maliciousBookmark.id
                 return supertest(app)
-                .get(`/bookmarks/${bookmarkId}`)
+                .get(`/api/bookmarks/${bookmarkId}`)
                 .expect(200)
                 .expect(res => {
                     expect(res.body.id).to.eql(maliciousBookmark.id)
@@ -125,7 +125,7 @@ describe('Bookmarks Service object', () => {
         context('given that the bookmarks_info table has no data', () => {
             it('returns 200 with an empty oject', () => {
                 return supertest(app)
-            .get(`/bookmarks`)
+            .get(`/api/bookmarks`)
             .expect(200, [])
             })
         })
@@ -134,7 +134,7 @@ describe('Bookmarks Service object', () => {
         context('given that the bookmark relating to the id doesnt exist', () => {
             it('returns 404 with an error message', () => {
                 return supertest(app)
-                .get(`/bookmarks/2`)
+                .get(`/api/bookmarks/2`)
                 .expect(404, {error: {
                     message: `Bookmark not found`
                 }})
@@ -150,7 +150,7 @@ describe('Bookmarks Service object', () => {
                 description: 'This is test'
             }
             return supertest(app)
-            .post('/bookmarks')
+            .post('/api/bookmarks')
             .send(newBookmark)
             .expect(201)
             .expect(res => {
@@ -158,11 +158,11 @@ describe('Bookmarks Service object', () => {
                 expect(res.body.url).to.eql(newBookmark.url)
                 expect(res.body.rating).to.eql(newBookmark.rating)
                 expect(res.body.description).to.eql(newBookmark.description)
-                expect(res.headers.location).to.eql(`/bookmarks/${res.body.id}`)
+                expect(res.headers.location).to.eql(`/api/bookmarks/${res.body.id}`)
             })
             .then(postRes => {
                 supertest(app)
-                .get(`/bookmarks/${postRes.body.id}`)
+                .get(`/api/bookmarks/${postRes.body.id}`)
                 .expect(postRes.body)
             })
         })
@@ -177,7 +177,7 @@ describe('Bookmarks Service object', () => {
             }
             it(`sanitizes the bookmark`, () => {
                 return supertest(app)
-                .post('/bookmarks')
+                .post('/api/bookmarks')
                 .send(maliciousBookmark)
                 .expect(201)
                 .expect(res => {
@@ -200,12 +200,12 @@ describe('Bookmarks Service object', () => {
                 const expectedBookmarks = testBookmark.filter(item => item.id !== bmID)
 
                 return supertest(app)
-                .delete(`/bookmarks/${bmID}`)
+                .delete(`/api/bookmarks/${bmID}`)
                 .expect(204)
                 .then(res => {
                     
                     supertest(app)
-                    .get('/bookmarks')
+                    .get('/api/bookmarks')
                     .expect(expectedBookmarks)
                 })
             })
@@ -215,9 +215,79 @@ describe('Bookmarks Service object', () => {
             it(`Returns 404`, () => {
                 const bmId = 123333333
                 return supertest(app)
-                    .delete(`/bookmarks/${bmId}`)
+                    .delete(`/api/bookmarks/${bmId}`)
                     .expect(404, {
                         error: { message: 'Bookmark not found'}
+                    })
+            })
+        })
+    })
+    describe.only(`PATCH endpoint`, () => {
+        context(`There is no data in the db`, () => {
+            it(`returns 404`, () => {
+                const id = 123455
+                return supertest(app)
+                .patch(`/api/bookmarks/${id}`)
+                .expect(404)
+            })
+        })
+        context(`There are bookmarks in the database`, () => {
+            beforeEach(`Add bookmarks to db`, () => {
+                return db.into('bookmarks_info').insert(testBookmark)
+            })
+            it(`responds with 204 and updates the article`, () => {
+                const idToUpdate = 2
+                const updateBookmark = {
+                    title: 'new title',
+                    url: 'www.booger.com',
+                    rating: 3,
+                    description: 'new description lol'
+                }
+                const expectedBookmark = {
+                    ...testBookmark[idToUpdate - 1],
+                    ...updateBookmark
+                }
+                return supertest(app)
+                .patch(`/api/bookmarks/${idToUpdate}`)
+                .send(updateBookmark)
+                .expect(204)
+                .then(res => {
+                    supertest(app)
+                    .get(`/api/articles/${idToUpdate}`)
+                    .expect(expectedBookmark)
+                })
+            })
+            it(`responds 400 when no required fields are updated`, () => {
+                const idToUpdate = 2
+                return supertest(app)
+                    .patch(`/api/bookmarks/${idToUpdate}`)
+                    .send({alllllll: 'hey'})
+                    .expect(400, {
+                        error: {
+                            message: `Request body must contain either 'title', 'url', 'rating' or 'description'`
+                        }
+                    })
+            })
+            it(`responds with 204 when updating only a subset of fields`, () => {
+                const idToUpdate = 2
+                const updateBookmark = {
+                    title: 'Hey its new'
+                }
+                const expectedBookmark = {
+                    ...testBookmark[idToUpdate - 1],
+                    ...updateBookmark
+                }
+                return supertest(app)
+                    .patch(`/api/bookmarks/${idToUpdate}`)
+                    .send({
+                        ...updateBookmark,
+                        fieldtoignore: 'adfsdf'
+                    })
+                    .expect(204)
+                    .then(res => {
+                        supertest(app)
+                        .get(`/api/articles/${idToUpdate}`)
+                        .expect(expectedBookmark)
                     })
             })
         })
