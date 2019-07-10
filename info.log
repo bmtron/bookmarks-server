@@ -42,3 +42,18 @@
 {"message":"Bookmark with id 0 not found","level":"error"}
 {"message":"Bookmark with id 2 not found","level":"error"}
 {"message":"Bookmark with id 2 not found","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"Rating must be a number between 1 and 5","level":"error"}
+{"message":"Rating must be a number between 1 and 5","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
+{"message":"URL must have valid format","level":"error"}
